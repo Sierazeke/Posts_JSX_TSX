@@ -1,0 +1,27 @@
+:root { --bg:#e9f0ee; --ink:#12302f; --muted:#298ab3; --card:#f4f7f5; --line:#313131; --sun:#e8a317; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 Georgia, "Times New Roman", serif; }
+main { max-width:720px; margin:0 auto; padding:24px 16px 48px; }
+h1 { font-size:1.6rem; margin:0 0 16px; }
+form { display:flex; gap:8px; flex-wrap:wrap; }
+input { flex:1; min-width:160px; padding:10px 12px; font:inherit; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+button { font:inherit; cursor:pointer; padding:10px 16px; border:1px solid var(--ink); border-radius:6px; background:var(--ink); color:var(--bg); }
+button:focus-visible, input:focus-visible { outline:3px solid var(--sun); outline-offset:2px; }
+#matches { list-style:none; padding:0; margin:12px 0 0; }
+#matches button { width:100%; text-align:left; background:var(--card); color:var(--ink); border-color:var(--line); margin-bottom:6px; }
+#status { min-height:1.5em; margin:12px 0; color:var(--muted); }
+#status.error { color:#a12d2d; }
+.now { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+.temp { font-size:4.5rem; line-height:1; font-weight:700; }
+.meta { color:var(--muted); }
+h2 { font-size:1.1rem; margin:28px 0 8px; }
+.hours { display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; color: rgb(38, 83, 167); }
+.hour { flex:0 0 78px; background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px; text-align:center; font-size:.9rem; }
+.hour b { display:block; font-size:1.1rem; }
+.day { display:grid; grid-template-columns:5.5rem 1fr auto; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
+.day .rng { font-variant-numeric:tabular-nums; }
+
+.loader { height:4px; margin:12px 0 0; background:var(--line); border-radius:2px; overflow:hidden; position:relative; }
+.loader::after { content:""; position:absolute; inset:0 auto 0 0; width:35%; background:var(--sun); border-radius:2px; animation:slide 1s ease-in-out infinite alternate; }
+@keyframes slide { to { transform:translateX(185%); } }
+@media (prefers-reduced-motion: reduce) { .loader::after { animation-duration:3s; } }
