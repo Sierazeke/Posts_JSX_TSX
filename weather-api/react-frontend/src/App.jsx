@@ -3,57 +3,62 @@ import { getJSON } from "./api";
 import SearchForm from "./components/SearchForm";
 import Weather from "./components/Weather";
 
+const IDLE = { text: "", error: false };
+const placeLabel = (r) => [r.name, r.admin1, r.country].filter(Boolean).join(", ");
+
 export default function App() {
   const [matches, setMatches] = useState([]);
-  const [weather, setWeather] = useState(null); // { place, data }
-  const [status, setStatus] = useState({ text: "", error: false });
+  const [weather, setWeather] = useState(null);
+  const [status, setStatus] = useState(IDLE);
   const [loading, setLoading] = useState(false);
-  const latestRequest = useRef(0); // only the newest request may update the UI
+  const latestRequest = useRef(0); 
 
-  async function loadWeather(place) {
+  // Runs one async job; the shared loading/error/stale logic lives here.
+  async function run(loadingText, job) {
     const id = ++latestRequest.current;
+    const isCurrent = () => id === latestRequest.current;
+
     setMatches([]);
-    setStatus({ text: "Loading forecast…", error: false });
+    setStatus({ text: loadingText, error: false });
     setLoading(true);
     try {
-      const data = await getJSON("/weather", {
-        lat: place.latitude,
-        lon: place.longitude,
-      });
-      if (id !== latestRequest.current) return;
-      setWeather({ place, data });
-      setStatus({ text: "", error: false });
+      await job(isCurrent);
     } catch (err) {
-      if (id === latestRequest.current) setStatus({ text: err.message, error: true });
+      if (isCurrent()) setStatus({ text: err.message, error: true });
     } finally {
-      if (id === latestRequest.current) setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }
 
-  async function handleSearch(name) {
-    const id = ++latestRequest.current;
-    setMatches([]);
-    setWeather(null);
-    setStatus({ text: "Searching…", error: false });
-    setLoading(true);
-    try {
-      const { results = [] } = await getJSON("/geocode", { name });
-      if (id !== latestRequest.current) return;
+  async function fetchWeather(place, isCurrent) {
+    const data = await getJSON("/weather", {
+      lat: place.latitude,
+      lon: place.longitude,
+    });
+    if (!isCurrent()) return;
+    setWeather({ place, data });
+    setStatus(IDLE);
+  }
 
-      if (!results.length) {
+  const loadWeather = (place) =>
+    run("Loading forecast…", (isCurrent) => fetchWeather(place, isCurrent));
+
+  const handleSearch = (name) =>
+    run("Searching…", async (isCurrent) => {
+      setWeather(null);
+      const { results = [] } = await getJSON("/geocode", { name });
+      if (!isCurrent()) return;
+
+      if (results.length === 0) {
         setStatus({ text: "No city found. Check the spelling.", error: true });
       } else if (results.length === 1) {
-        await loadWeather(results[0]); // takes over loading state itself
+        setStatus({ text: "Loading forecast…", error: false });
+        await fetchWeather(results[0], isCurrent); // same job, same id
       } else {
         setMatches(results);
         setStatus({ text: "Pick a location:", error: false });
       }
-    } catch (err) {
-      if (id === latestRequest.current) setStatus({ text: err.message, error: true });
-    } finally {
-      if (id === latestRequest.current) setLoading(false);
-    }
-  }
+    });
 
   return (
     <main>
@@ -66,7 +71,7 @@ export default function App() {
         {matches.map((r) => (
           <li key={r.id}>
             <button type="button" onClick={() => loadWeather(r)}>
-              {[r.name, r.admin1, r.country].filter(Boolean).join(", ")}
+              {placeLabel(r)}
             </button>
           </li>
         ))}
